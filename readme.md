@@ -2,7 +2,12 @@
 created by bbdjohn (Discord username)
 ```
 wget masternodetools.com/tools/sucrtools -O /usr/bin/sucrtools
+chmod 755 /usr/bin/sucrtools
 
+OR
+
+wget https://github.com/sucremoneda/sucre-tools
+sudo cp sucrtools /usr/bin
 chmod 755 /usr/bin/sucrtools
 ```
 
