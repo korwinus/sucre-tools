@@ -1,6 +1,6 @@
 #!/bin/bash
-#version:0.2.1
-#changelog:\nLocation of sentinel log\nReview system log\n@reboot crontab review\nDownload Location - ability to change\nLanguage update\nRussian Language Support
+#version:0.2.2
+#changelog:\nLocation of sentinel log\nReview system log\n@reboot crontab review\nDownload Location - ability to change\nLanguage update\nRussian Language Support\ngithub support
 NONE='\033[00m'
 RED='\033[01;31m'
 GREEN='\033[01;32m'
@@ -566,7 +566,7 @@ if [ "$LANGUAGE" = "LANGUAGE=RUSSIAN" ]
     declare -ga LanguageMenu=("" "${CYAN}[1]${NONE} Установить меню на английский язык" "${CYAN}[2]${NONE} Установить меню на испанский" "${CYAN}[3]${NONE} Меню Set Russian")
 fi
 
-declare -ga LanguageMenuOptions=("" "SetLanguage EENGLISH" "SetLanguage SPANISH" "SetLanguage RUSSIAN")
+declare -ga LanguageMenuOptions=("" "SetLanguage ENGLISH" "SetLanguage SPANISH" "SetLanguage RUSSIAN")
 
 response1="1"
 
@@ -614,7 +614,8 @@ response1="1"
 
 SetLanguage() {
   confRemove "LANGUAGE="
-  echo "LANGUAGE=$1" >> $CORE/$TOOLNAME.conf
+  echo "Language: ${1^^}"
+  echo "LANGUAGE=${1^^}" >> $CORE/$TOOLNAME.conf
   LANGUAGE="`cat $CORE/$TOOLNAME.conf`"
   exit
 }
@@ -688,15 +689,34 @@ downloadLocation() {
   if [ "$TOOLDOWNLOAD" = "" ]
     then  
       # No setting in config file
-      TOOLHUB="https://github.com/sucremoneda/sucrtools"
+      TOOLHUB="https://github.com/sucremoneda/sucre-tools.git"
+      TOOLDOWNLOAD = "github"
   elif [ "$TOOLDOWNLOAD" = "github" ]
     then
       # github / coin website
-      TOOLHUB="https://github.com/sucremoneda/sucrtools"
+      TOOLHUB="https://github.com/sucremoneda/sucre-tools.git"
   else
       # Traditional location
       TOOLHUB=masternodetools.com/tools
   fi
+
+
+  if  [ "$TOOLDOWNLOAD" = "github" ]
+    then
+      sudo rm -rf /root/sucre-tools
+      sudo git clone $TOOLHUB > /dev/null 2>&1
+      sudo cp /root/sucre-tools/sucrtools $TOOLTMP/$TOOLNAMENEW
+      do_nothing="N"
+  else
+    wget $TOOLHUB/$TOOLNAME -O $TOOLTMP/$TOOLNAMENEW  > /dev/null 2>&1
+    if [ $? -ne 0 ]
+      then
+        do_nothing="Y"
+      else
+        do_nothing="N"
+    fi
+  fi
+
 }
 
 SetDownload() {
@@ -721,11 +741,13 @@ counter () {
  if [ "$USEAGE" -gt 10 ]
   then
     downloadLocation
-    wget $TOOLHUB/$TOOLNAME -O $TOOLTMP/$TOOLNAMENEW  > /dev/null 2>&1
-    if [ $? -ne 0 ]
-      then
-      do_nothing="Y"
-    else
+    #wget $TOOLHUB/$TOOLNAME -O $TOOLTMP/$TOOLNAMENEW  > /dev/null 2>&1
+    #if [ $? -ne 0 ]
+    #  then
+    #  do_nothing="Y"
+    #else
+    if [ "$do_nothing" = "N" ]
+     then
 
         NEWVERSION="`cat $TOOLTMP/$TOOLNAMENEW | grep -m1 \#version: | awk '{print $1}'| cut -f2 -d:`"
 
@@ -830,8 +852,8 @@ Upgrade() {
 
     echo -e "\n${WHITE}Check for upgrade.${NONE}"
     downloadLocation
-    wget $TOOLHUB/$TOOLNAME -O $TOOLTMP/$TOOLNAMENEW  > /dev/null 2>&1
-    if [ $? -ne 0 ]
+    #wget $TOOLHUB/$TOOLNAME -O $TOOLTMP/$TOOLNAMENEW  > /dev/null 2>&1
+    if [ "$do_nothing" = "Y" ]
       then
       echo -e "${RED}Not able to reach server $TOOLHUB/$TOOLNAME ${NONE}"
       echo -e "Try again later.\n"
@@ -846,8 +868,19 @@ Upgrade() {
             echo -e "${WHITE}Press Enter to continue.${NONE}"
             read -e -p "" $continue
         else
-            CHANGES="`cat $TOOLTMP/$TOOLNAMENEW | grep -m1 \#changelog:`"
-            echo -e "$currentRelease2"
+          CHANGES="`cat $TOOLTMP/$TOOLNAMENEW | grep -m1 \#changelog:`"
+          currentRelease2="An Upgrade from $CURVERSION to $NEWVERSION is available - it includes the following changes ${GREEN}\n$CHANGES${NONE}"
+          if [ "$LANGUAGE" = "LANGUAGE=SPANISH" ]
+            then
+              currentRelease2="Una actualización de $CURVERSION a $NEWVERSION está disponible, incluye los siguientes cambios ${GREEN}\n$CHANGES${NONE}"
+          fi
+
+          if [ "$LANGUAGE" = "LANGUAGE=RUSSIAN" ]
+            then
+              currentRelease2="Обновление с $CURVERSION to $NEWVERSION доступен - он включает следующие изменения: ${GREEN}\n$CHANGES${NONE}"
+          fi
+
+           echo -e "$currentRelease2"
                #"An Upgrade from $CURVERSION to $NEWVERSION is available - it includes the following changes ${GREEN}\n$CHANGES${NONE}"
             read -e -p "Upgrade to new version of MasterNode Utilities? [Y/n] :" upgrade_now
             if [[ ("$upgrade_now" == "y" || "$upgrade_now" == "Y" || "$upgrade_now" == "") ]]; then
@@ -1139,7 +1172,7 @@ declare -ga MainMenuOptions=("" "ReviewMyMasterNode" "ShowWalletMenu" "ShowSenti
                             "" "" "ShowAbout" "Upgrade")
 declare -ga MainMenuType=("" "" "M" "M" "M" "M" "" "" "" "")
 
-CMDLINE="$1"
+CMDLINE="$@"
 response="1"
 
 if [ "$CMDLINE" = "/?" ]
