@@ -6,13 +6,13 @@ chmod 755 /usr/bin/sucrtools
 
 OR
 
-wget https://github.com/sucremoneda/sucre-tools
+git clone https://github.com/sucremoneda/sucre-tools.git
+cd sucre-tools
 sudo cp sucrtools /usr/bin
-chmod 755 /usr/bin/sucrtools
 ```
 
 to run type
 ```
 sucrtools
 ```
-english / spanish support and option to try and diagnose issues with a MN.
+english / spanish / russian support and option to try and diagnose issues with a MN.
